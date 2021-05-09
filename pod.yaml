@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-nfs-pod 
+  labels:
+    name: nginx-nfs-pod
+spec:
+  containers:
+    - name: nginx-nfs-pod
+      image: gcr.io/delta-carving-312819/nginx:latest 
+      ports:
+        - name: web
+          containerPort: 80
+      volumeMounts:
+        - name: nfsvol 
+          mountPath: /usr/share/nginx/html 
+  securityContext:
+      supplementalGroups: [100003] 
+  volumes:
+    - name: nfsvol
+      persistentVolumeClaim:
+        claimName: nfs-pvc 
