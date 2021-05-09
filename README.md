@@ -38,3 +38,81 @@ systemctl restart nfs-kernel-server
 
 
 ```
+
+
+nfs-pv.yaml:
+
+```
+nfs-pv.yaml
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: nfs-pv
+spec:
+  storageClassName: "standard"
+  capacity:
+    storage: 2048Gi
+  accessModes:
+    - ReadWriteMany
+  persistentVolumeReclaimPolicy: Retain
+  claimRef:
+    namespace: foobar
+    name: nfs-pvc
+  nfs:
+    path: /mnt/nfs_share
+    server: 192.168.0.15
+
+```
+
+nfs-pvc.yaml:
+
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: nfs-pvc
+spec:
+  accessModes:
+  - ReadWriteOnce
+  resources:
+     requests:
+       storage: 204Gi
+  volumeName: "nfs-pv"
+```
+
+deployment.yaml:
+
+```
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-nfs-pod
+  labels:
+    name: nginx-nfs-pod
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+        - name: nginx-nfs-pod
+          image: gcr.io/delta-carving-312819/nginx:latest
+          ports:
+            - name: web
+              containerPort: 80
+          volumeMounts:
+            - name: nfsvol
+              mountPath: /usr/share/nginx/html
+      securityContext:
+          supplementalGroups: [100003]
+      volumes:
+        - name: nfsvol
+          persistentVolumeClaim:
+            claimName: nfs-pvc
+
+```
